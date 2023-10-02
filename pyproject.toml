@@ -53,6 +53,7 @@ lxml = "^4.9.3"
 beautifulsoup4 = "^4.12.2"
 jupyter = "^1.0.0"
 ipywidgets = "^8.1.1"
+aiohttp-client-cache = {extras = ["all"], version = "^0.9.1"}
 
 [tool.semantic_release]
 branch = "main"
