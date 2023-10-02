@@ -120,21 +120,23 @@ class TestCache(IsolatedAsyncioTestCase):
 
         from cached_historical_data_fetcher import HistoricalDataCacheWithFixedChunk
 
-        class MyCache(HistoricalDataCache):
+        class MyCache_(HistoricalDataCache):
             interval: Timedelta = Timedelta(days=1)
 
             async def get(
                 self, start: Timestamp | None, *args: Any, **kwargs: Any
             ) -> DataFrame:
+                start = start or Timestamp.utcnow().floor("10D")
                 date_range_chunk = date_range(start, Timestamp.utcnow(), freq="D")
                 return DataFrame(
                     {"day": [d.day for d in date_range_chunk]}, index=date_range_chunk
                 )
 
-        df = await MyCache().update()
+        df = await MyCache_().update()
+        print("\n")
         print(df)
 
-        class MyCacheWithChunk(HistoricalDataCacheWithChunk):
+        class MyCacheWithChunk_(HistoricalDataCacheWithChunk):
             delay_seconds: float = 0
             interval: Timedelta = Timedelta(days=1)
             start_init: Timestamp = Timestamp.utcnow().floor("10D")
@@ -144,10 +146,10 @@ class TestCache(IsolatedAsyncioTestCase):
             ) -> DataFrame:
                 return DataFrame({"day": [start.day]}, index=[start])
 
-        df = await MyCacheWithChunk().update()
+        df = await MyCacheWithChunk_().update()
         print(df)
 
-        class MyCacheWithFixedChunk(HistoricalDataCacheWithFixedChunk):
+        class MyCacheWithFixedChunk_(HistoricalDataCacheWithFixedChunk):
             delay_seconds: float = 0
             interval: Timedelta = Timedelta(days=1)
             start_init: Timestamp = Timestamp.utcnow().floor("10D")
@@ -157,5 +159,5 @@ class TestCache(IsolatedAsyncioTestCase):
             ) -> DataFrame:
                 return DataFrame({"day": [start.day]}, index=[start])
 
-        df = await MyCacheWithFixedChunk().update()
+        df = await MyCacheWithFixedChunk_().update()
         print(df)

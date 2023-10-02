@@ -33,6 +33,7 @@ class HistoricalDataCache(metaclass=ABCMeta):
         interval: Timedelta = Timedelta(days=1)
 
         async def get(self, start: Timestamp | None, *args: Any, **kwargs: Any) -> DataFrame:
+            start = start or Timestamp.utcnow().floor("10D")
             date_range_chunk = date_range(start, Timestamp.utcnow(), freq="D")
             return DataFrame({"day": [d.day for d in date_range_chunk]}, index=date_range_chunk)
 
