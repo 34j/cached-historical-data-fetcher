@@ -31,6 +31,7 @@
 </p>
 
 Python utility for fetching any historical data using caching.
+Suitable for acquiring data that is added frequently and incrementally, e.g. news, posts, weather, etc.
 
 ## Installation
 
@@ -39,6 +40,40 @@ Install this via pip (or your favourite package manager):
 ```shell
 pip install cached-historical-data-fetcher
 ```
+
+## Features
+
+- Uses cache built on top of [`joblib`](https://github.com/joblib/joblib), [`lz4`](https://github.com/lz4/lz4) and [`aiofiles`](https://github.com/Tinche/aiofiles).
+- Ready to use with [`asyncio`](https://docs.python.org/3/library/asyncio.html), [`aiohttp`](https://github.com/aio-libs/aiohttp), [`aiohttp-client-cache`](https://github.com/requests-cache/aiohttp-client-cache). Uses `asyncio.gather` for fetching chunks in parallel. (For performance reasons, only using `aiohttp-client-cache` is probably not a good idea when fetching large number of chunks (web requests).)
+- Based on [`pandas`](https://github.com/pandas-dev/pandas) and supports `MultiIndex`.
+
+## Usage
+
+Override `get_one` method to fetch data for one chunk. `update` method will call `get_one` for each chunk and concatenate results.
+
+```python
+from cached_historical_data_fetcher import HistoricalDataCacheWithFixedChunk
+from pandas import DataFrame, Timedelta, Timestamp
+
+class MyCacheWithFixedChunk(HistoricalDataCacheWithFixedChunk):
+    delay_seconds: float = 0 # delay between chunks
+    interval: Timedelta = Timedelta(days=1) # chunk interval
+    start_init: Timestamp = Timestamp.utcnow().floor("10D") # start date
+
+    async def get_one(self, start: Timestamp, *args: Any, **kwargs: Any) -> DataFrame:
+        return DataFrame({"day": [start.day]}, index=[start])
+
+df = await MyCacheWithFixedChunk().update()
+```
+
+```shell
+                           day
+2023-09-30 00:00:00+00:00   30
+2023-10-01 00:00:00+00:00    1
+2023-10-02 00:00:00+00:00    2
+```
+
+See [example.ipynb](example.ipynb) for real-world example.
 
 ## Contributors ✨
 
