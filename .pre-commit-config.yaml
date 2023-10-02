@@ -57,6 +57,7 @@ repos:
     rev: v2.2.5
     hooks:
       - id: codespell
+        args: [-L, astroid]
   - repo: https://github.com/PyCQA/flake8
     rev: 6.1.0
     hooks:
