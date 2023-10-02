@@ -104,20 +104,19 @@ class HistoricalDataCache(metaclass=ABCMeta):
             raise TypeError(f"Unexpected type read from {self.path(name)}: {type(df)}")
 
         # check if need to update
-        to_update = self.to_update(
-            df.index.max() if not df.empty else None, *args, **kwargs
-        )
+        start = None
+        if not df.empty:
+            start = df.index.max()
+        if isinstance(start, tuple):
+            start = start[0]
+        to_update = self.to_update(start, *args, **kwargs)
         if not isinstance(to_update, bool):
             raise TypeError(f"to_update must return bool: {type(to_update)}")
 
         # update
         if to_update:
             df = await self.get(
-                (
-                    (df.index.max() + self.interval)
-                    if self.add_interval
-                    else df.index.max()
-                )
+                ((start + self.interval) if self.add_interval else start)
                 if not df.empty
                 else None,
                 *args,
@@ -165,6 +164,7 @@ class HistoricalDataCache(metaclass=ABCMeta):
             It is recommended to set index to Timestamp or unique incremental number.
             If the index is not Timestamp, override `self.to_update()`
             to implement the logic as well.
+            Multiindex is supported. It is recommended to set the first level to Timestamp.
         """
 
     def to_update(self, end: Timestamp | Any | None, *args: Any, **kwargs: Any) -> bool:
@@ -183,4 +183,6 @@ class HistoricalDataCache(metaclass=ABCMeta):
         bool
             Whether to update cache file.
         """
-        return end is None or end + self.interval < Timestamp.utcnow()
+        return end is None or end + self.interval < Timestamp.utcnow().tz_convert(
+            tz=end.tz
+        )

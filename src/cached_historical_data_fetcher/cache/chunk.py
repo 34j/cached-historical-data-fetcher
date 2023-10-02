@@ -8,7 +8,7 @@ from typing import Any, final
 
 import pandas as pd
 from pandas import DataFrame, Timestamp, concat
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from .base import HistoricalDataCache
 
@@ -71,11 +71,6 @@ class HistoricalDataCacheWithChunk(HistoricalDataCache, metaclass=ABCMeta):
         """Delay between chunks in seconds. (Alias of `self.delay_seconds`.)"""
         self.delay_seconds = value
 
-    def to_update(self, end: Timestamp | None, *args: Any, **kwargs: Any) -> bool:
-        return end is None or end + self.interval < Timestamp.utcnow().tz_convert(
-            tz=self.start_init.tz
-        )
-
     @abstractmethod
     async def get_one(self, start: Timestamp, *args: Any, **kwargs: Any) -> DataFrame:
         """Get one chunk of historical data. Override this method to implement the logic.
@@ -92,6 +87,7 @@ class HistoricalDataCacheWithChunk(HistoricalDataCache, metaclass=ABCMeta):
             It is recommended to set index to Timestamp or unique incremental number.
             If the index is not Timestamp,
             override `self.to_update()` to implement the logic as well.
+            Multiindex is supported. It is recommended to set the first level to Timestamp.
         """
 
     async def get(
@@ -133,6 +129,8 @@ class HistoricalDataCacheWithChunk(HistoricalDataCache, metaclass=ABCMeta):
 
             dfs.append(df)
             start_current = df.index.max()
+            if isinstance(start_current, tuple):
+                start_current = start_current[0]
             if self.add_interval:
                 start_current += self.interval
             pbar.update()
