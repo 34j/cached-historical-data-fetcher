@@ -78,6 +78,8 @@ print(await MyCacheWithFixedChunk().update())
 2023-10-02 00:00:00+00:00    2
 ```
 
+**See [example.ipynb](example.ipynb) for real-world example.**
+
 ### `IdCacheWithFixedChunk`
 
 ```python
@@ -105,8 +107,6 @@ print(await cache.update())
     b   b+hello
     c   c+hello
 ```
-
-See [example.ipynb](example.ipynb) for real-world example.
 
 ## Contributors ✨
 
