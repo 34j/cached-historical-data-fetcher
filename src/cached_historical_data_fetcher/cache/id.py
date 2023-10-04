@@ -17,8 +17,25 @@ class IdCacheWithFixedChunk(
     Examples
     --------
     .. code-block:: python
-        from cached_historical_data_fetcher import IdCacheWithFixedChunk
 
+       from cached_historical_data_fetcher import IdCacheWithFixedChunk
+
+       class MyIdCache(IdCacheWithFixedChunk[str, Any]):
+           delay_seconds = 0.0
+
+           async def get_one(self, start: str, *args: Any, **kwargs: Any) -> DataFrame:
+               return DataFrame({"id+hello": [start + "+hello"]}, index=[start])
+
+       cache = MyIdCache()
+       cache.set_ids(["a", "b", "c"])
+       df = await cache.update()
+
+    Output:
+
+       id+hello
+    a   a+hello
+    b   b+hello
+    c   c+hello
     """
 
     add_interval_to_start_index: bool = False
