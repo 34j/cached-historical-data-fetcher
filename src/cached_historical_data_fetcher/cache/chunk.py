@@ -4,18 +4,23 @@ import asyncio
 import warnings
 from abc import ABCMeta, abstractmethod
 from logging import getLogger
-from typing import Any, final
+from typing import Generic, Sequence
 
+import numpy as np
 import pandas as pd
 from pandas import DataFrame, Timestamp, concat
 from tqdm.auto import tqdm
 
-from .base import HistoricalDataCache
+from .base import HistoricalDataCache, PGet, TIndex, TInterval
 
 LOG = getLogger(__name__)
 
 
-class HistoricalDataCacheWithChunk(HistoricalDataCache, metaclass=ABCMeta):
+class HistoricalDataCacheWithChunk(
+    HistoricalDataCache[TIndex, TInterval, PGet],
+    Generic[TIndex, TInterval, PGet],
+    metaclass=ABCMeta,
+):
     """Base class for historical data cache with chunk.
 
     Usage
@@ -27,39 +32,41 @@ class HistoricalDataCacheWithChunk(HistoricalDataCache, metaclass=ABCMeta):
     Examples
     --------
     .. code-block:: python
-    from cached_historical_data_fetcher import HistoricalDataCacheWithChunk
-    from pandas import DataFrame, Timedelta, Timestamp
+        from cached_historical_data_fetcher import HistoricalDataCacheWithChunk
+        from pandas import DataFrame, Timedelta, Timestamp
 
-    class MyCacheWithChunk(HistoricalDataCacheWithChunk):
-        delay_seconds: float = 0
-        interval: Timedelta = Timedelta(days=1)
-        start_init: Timestamp = Timestamp.utcnow().floor("10D")
+        class MyCacheWithChunk(HistoricalDataCacheWithChunk[Timestamp, Timedelta, Any]):
+            delay_seconds = 0.0
+            interval = Timedelta(days=1)
+            start_index = Timestamp.utcnow().floor("10D")
 
-        async def get_one(self, start: Timestamp, *args: Any, **kwargs: Any) -> DataFrame:
-            return DataFrame({"day": [start.day]}, index=[start])
+            async def get_one(self, start: Timestamp, *args: Any, **kwargs: Any) -> DataFrame:
+                return DataFrame({"day": [start.day]}, index=[start])
 
-    df = await MyCacheWithChunk().update()
+        df = await MyCacheWithChunk().update()
     """
 
     delay_seconds: float
     """Delay between chunks in seconds."""
-    start_init: Timestamp
-    """The initial start index of historical data.
-    Used when no cache file exists."""
-    get_latest_uncompleted_chunk: bool = False
-    """Whether to get the latest uncompleted chunk.
-    If True, make sure to set `self.add_interval` to False
-    to avoid uncompleted chunk left in cache file."""
 
-    def __init__(self) -> None:
-        super().__init__()
-        if self.get_latest_uncompleted_chunk and self.add_interval:
-            warnings.warn(
-                "If `self.get_latest_uncompleted_chunk` is True, "
-                "make sure to set `self.add_interval` to False "
-                "to avoid uncompleted chunk left in cache file.",
-                RuntimeWarning,
-            )
+    @property
+    def start_index(self) -> TIndex:
+        """The start index of historical data.
+        Used when cache file exists."""
+        raise NotImplementedError()
+
+    def new_indices(
+        self, start: TIndex, end: TIndex, old_indices: Sequence[TIndex] | None = None
+    ) -> Sequence[TIndex]:
+        if isinstance(start, Timestamp) and isinstance(end, Timestamp):
+            return pd.date_range(start, end, freq=self.interval)
+        else:
+            try:
+                return np.arange(start, end, self.interval)
+            except TypeError:
+                raise TypeError(
+                    f"Please override self.range() to support {type(start)} and {type(end)}"
+                )
 
     @property
     def delay(self) -> float:
@@ -72,12 +79,14 @@ class HistoricalDataCacheWithChunk(HistoricalDataCache, metaclass=ABCMeta):
         self.delay_seconds = value
 
     @abstractmethod
-    async def get_one(self, start: Timestamp, *args: Any, **kwargs: Any) -> DataFrame:
+    async def get_one(
+        self, start: TIndex, *args: PGet.args, **kwargs: PGet.kwargs
+    ) -> DataFrame:
         """Get one chunk of historical data. Override this method to implement the logic.
 
         Parameters
         ----------
-        start : Timestamp
+        start : TIndex
             The start index of historical data.
 
         Returns
@@ -87,17 +96,18 @@ class HistoricalDataCacheWithChunk(HistoricalDataCache, metaclass=ABCMeta):
             It is recommended to set index to Timestamp or unique incremental number.
             If the index is not Timestamp,
             override `self.to_update()` to implement the logic as well.
-            Multiindex is supported. It is recommended to set the first level to Timestamp.
+            If MultiIndex is used, the first level will be passed to this method
+            or `self.to_update()`.
         """
 
     async def get(
-        self, start: Timestamp | None, *args: Any, **kwargs: Any
+        self, start: TIndex | None, *args: PGet.args, **kwargs: PGet.kwargs
     ) -> DataFrame:
         """Get historical data. This method does not need to be overridden.
 
         Parameters
         ----------
-        start : Timestamp | Any | None
+        start : TIndex
             The last index of historical data.
 
         Returns
@@ -108,20 +118,22 @@ class HistoricalDataCacheWithChunk(HistoricalDataCache, metaclass=ABCMeta):
             If the index is not Timestamp,
             override `self.to_update()` to implement the logic as well.
         """
-        start_init: Timestamp = start or self.start_init
+        start_index: TIndex = start or self.start_index
         dfs = []
 
         # The progress bar is not accurate because chunk size may not be fixed.
-        pbar = tqdm(
-            pd.date_range(
-                start_init.tz_convert(tz="UTC"),
-                (Timestamp.utcnow())
-                if self.get_latest_uncompleted_chunk
-                else (Timestamp.utcnow() - self.interval),
-                freq=self.interval,
+        try:
+            new_indices = self.new_indices(
+                start_index, self.end_index, self.df_old.index
             )
-        )
-        start_current = start_init
+        except Exception as e:
+            warnings.warn(
+                f"self.new_indices() failed. Progress bar may be inaccurate: {e}"
+            )
+            new_indices = []
+
+        pbar = tqdm(new_indices)
+        start_current: TIndex = start_index
         while self.to_update(start_current, *args, **kwargs):
             df = await self.get_one(start_current, *args, **kwargs)
             if not isinstance(df, DataFrame):
@@ -130,8 +142,8 @@ class HistoricalDataCacheWithChunk(HistoricalDataCache, metaclass=ABCMeta):
             dfs.append(df)
             start_current = df.index.max()
             if isinstance(start_current, tuple):
-                start_current = start_current[0]
-            if self.add_interval:
+                start_current = start_current[0]  # type: ignore
+            if self.add_interval_to_start_index:
                 start_current += self.interval
             pbar.update()
             pbar.set_description(
@@ -143,7 +155,9 @@ class HistoricalDataCacheWithChunk(HistoricalDataCache, metaclass=ABCMeta):
 
 
 class HistoricalDataCacheWithFixedChunk(
-    HistoricalDataCacheWithChunk, metaclass=ABCMeta
+    HistoricalDataCacheWithChunk[TIndex, TInterval, PGet],
+    Generic[TIndex, TInterval, PGet],
+    metaclass=ABCMeta,
 ):
     """Base class for historical data cache with chunk.
 
@@ -165,39 +179,27 @@ class HistoricalDataCacheWithFixedChunk(
     Examples
     --------
     .. code-block:: python
-    from cached_historical_data_fetcher import HistoricalDataCacheWithFixedChunk
-    from pandas import DataFrame, Timedelta, Timestamp
+        from cached_historical_data_fetcher import HistoricalDataCacheWithFixedChunk
+        from pandas import DataFrame, Timedelta, Timestamp
 
-    class MyCacheWithFixedChunk(HistoricalDataCacheWithFixedChunk):
-        delay_seconds: float = 0
-        interval: Timedelta = Timedelta(days=1)
-        start_init: Timestamp = Timestamp.utcnow().floor("10D")
+        class MyCacheWithFixedChunk(HistoricalDataCacheWithFixedChunk[Timestamp, Timedelta, Any]):
+            delay_seconds = 0.0
+            interval = Timedelta(days=1)
+            start_index = Timestamp.utcnow().floor("10D")
 
-        async def get_one(self, start: Timestamp, *args: Any, **kwargs: Any) -> DataFrame:
-            return DataFrame({"day": [start.day]}, index=[start])
+            async def get_one(self, start: Timestamp, *args: Any, **kwargs: Any) -> DataFrame:
+                return DataFrame({"day": [start.day]}, index=[start])
 
-    df = await MyCacheWithFixedChunk().update()
+        df = await MyCacheWithFixedChunk().update()
     """
 
-    @final
-    def to_update(self, end: Timestamp | None, *args: Any, **kwargs: Any) -> bool:
-        return super().to_update(end, *args, **kwargs)
-
     async def get(
-        self, start: Timestamp | None, *args: Any, **kwargs: Any
+        self, start: TIndex | None, *args: PGet.args, **kwargs: PGet.kwargs
     ) -> DataFrame:
-        start_init: Timestamp = start or self.start_init
+        start_index: TIndex = start or self.start_index
         tasks = []
-        pbar = tqdm(
-            pd.date_range(
-                start_init.tz_convert(tz="UTC"),
-                (Timestamp.utcnow())
-                if self.get_latest_uncompleted_chunk
-                else (Timestamp.utcnow() - self.interval),
-                freq=self.interval,
-            )
-        )
 
+        pbar = tqdm(self.new_indices(start_index, self.end_index, self.df_old.index))
         for start_current in pbar:
             tasks.append(
                 asyncio.create_task(self.get_one(start_current, *args, **kwargs))

@@ -85,6 +85,7 @@ async def update(
     path: Path,
     df: DataFrame,
     *,
+    df_old: DataFrame | None = None,
     reload: bool = False,
     mismatch: Literal["warn", "raise"] | int | None = "warn",
     keep: Literal["first", "last"] = "last",
@@ -99,6 +100,8 @@ async def update(
         The path to cache file.
     df : DataFrame
         The DataFrame to save.
+    df_old : DataFrame, optional
+        The DataFrame read from cache file, by default None
     reload : bool, optional
         Whether to ignore cache file and reload, by default False
     mismatch : Literal["warn", "raise"] | int | None, optional
@@ -116,7 +119,8 @@ async def update(
     DataFrame
         _description_
     """
-    df_old = await read(path) if not reload else DataFrame()
+    if df_old is None:
+        df_old = await read(path) if not reload else DataFrame()
 
     # check if duplicated data is same
     if len(df_old) > 0:

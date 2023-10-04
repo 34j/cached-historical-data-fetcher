@@ -55,14 +55,17 @@ Override `get_one` method to fetch data for one chunk. `update` method will call
 from cached_historical_data_fetcher import HistoricalDataCacheWithFixedChunk
 from pandas import DataFrame, Timedelta, Timestamp
 
-class MyCacheWithFixedChunk(HistoricalDataCacheWithFixedChunk):
-    delay_seconds: float = 0 # delay between chunks
-    interval: Timedelta = Timedelta(days=1) # chunk interval
-    start_init: Timestamp = Timestamp.utcnow().floor("10D") # start date
+# define cache class
+class MyCacheWithFixedChunk(HistoricalDataCacheWithFixedChunk[Timestamp, Timedelta, Any]):
+    delay_seconds = 0.0 # delay between chunks (requests) in seconds
+    interval = Timedelta(days=1) # interval between chunks, can be any type
+    start_index = Timestamp.utcnow().floor("10D") # start index, can be any type
 
     async def get_one(self, start: Timestamp, *args: Any, **kwargs: Any) -> DataFrame:
+        """Fetch data for one chunk."""
         return DataFrame({"day": [start.day]}, index=[start])
 
+# get complete data
 df = await MyCacheWithFixedChunk().update()
 ```
 
