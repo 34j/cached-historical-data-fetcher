@@ -102,8 +102,11 @@ async def update(
         The DataFrame to save.
     df_old : DataFrame, optional
         The DataFrame read from cache file, by default None
+        If not None, reload is ignored.
+        Intended to avoid reading cache file multiple times.
     reload : bool, optional
         Whether to ignore cache file and reload, by default False
+        If df_old is not None, reload is ignored.
     mismatch : Literal["warn", "raise"] | int | None, optional
         The action when data mismatch, by default "warn"
         If int, log level. If None, do nothing.
@@ -117,7 +120,7 @@ async def update(
     Returns
     -------
     DataFrame
-        _description_
+        The updated DataFrame.
     """
     if df_old is None:
         df_old = await read(path) if not reload else DataFrame()

@@ -56,8 +56,30 @@ class HistoricalDataCacheWithChunk(
         raise NotImplementedError()
 
     def new_indices(
-        self, start: TIndex, end: TIndex, old_indices: Sequence[TIndex] | None = None
+        self, start: TIndex, end: TIndex, old_indices: Sequence[TIndex]
     ) -> Sequence[TIndex]:
+        """Get new indices to update.
+
+        Parameters
+        ----------
+        start : TIndex
+            The start index of historical data.
+        end : TIndex
+            The end index of historical data.
+        old_indices : Sequence[TIndex]
+            The old indices of historical data
+
+        Returns
+        -------
+        Sequence[TIndex]
+            The new indices to update.
+
+        Raises
+        ------
+        TypeError
+            If `start` or `end` is not supported
+            (not Timestamp or not supported by `np.arange`).
+        """
         if isinstance(start, Timestamp) and isinstance(end, Timestamp):
             return pd.date_range(start, end, freq=self.interval)
         else:

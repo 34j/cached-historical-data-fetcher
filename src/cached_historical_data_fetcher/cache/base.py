@@ -14,6 +14,9 @@ from ..io import get_path, read, update
 
 
 class AddableAndSubtractableAndComparable(Protocol):
+    """A protocol that requires __add__, __sub__, __lt__, __gt__
+    (+, -, <, >) operators."""
+
     def __add__(self, other: Any) -> Self:
         ...
 
@@ -26,24 +29,16 @@ class AddableAndSubtractableAndComparable(Protocol):
     def __gt__(self, other: Any) -> bool:
         ...
 
-    def __ge__(self, other: Any) -> bool:
-        ...
-
-    def __le__(self, other: Any) -> bool:
-        ...
-
-    def __eq__(self, other: Any) -> bool:
-        ...
-
-    def __ne__(self, other: Any) -> bool:
-        ...
-
 
 BASE_PATH = Path(f"~/.cache/{__name__.split('.')[0]}").expanduser()
+"""The folder to store cache files."""
 LOG = getLogger(__name__)
 TIndex = TypeVar("TIndex", bound=AddableAndSubtractableAndComparable)
+"""The type of index in DataFrame."""
 TInterval = TypeVar("TInterval")
+"""The type of interval which can be added to index."""
 PGet = ParamSpec("PGet")
+"""The type of arguments for `self.get()`."""
 
 
 class HistoricalDataCache(Generic[TIndex, TInterval, PGet], metaclass=ABCMeta):
@@ -126,10 +121,28 @@ class HistoricalDataCache(Generic[TIndex, TInterval, PGet], metaclass=ABCMeta):
             )
 
     def path(self, name: str) -> Path:
+        """Get path to cache file.
+
+        Parameters
+        ----------
+        name : str
+            The name of cache file.
+
+        Returns
+        -------
+        Path
+            The path to cache file.
+        """
         return get_path(self.folder, name)
 
     def name_from_args_kwargs(self, *args: Any, **kwargs: Any) -> str:
-        """Generate path from args and kwargs."""
+        """Generate safe name from arguments using slugify.
+
+        Returns
+        -------
+        str
+            The name of cache file.
+        """
         name = "_".join([str(arg) for arg in args]) + "_".join(
             [f"{key}-{value}" for key, value in kwargs.items()]
         )
@@ -137,6 +150,13 @@ class HistoricalDataCache(Generic[TIndex, TInterval, PGet], metaclass=ABCMeta):
         return name
 
     def path_from_args_kwargs(self, *args: Any, **kwargs: Any) -> Path:
+        """Get path to cache file from arguments.
+
+        Returns
+        -------
+        Path
+            The path to cache file.
+        """
         return self.path(self.name_from_args_kwargs(*args, **kwargs))
 
     async def update(

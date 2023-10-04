@@ -36,10 +36,8 @@ class IdCacheWithFixedChunk(
         self.ids = Index(ids)
 
     def new_indices(
-        self, start: Any, end: Any, old_indices: Sequence[TIndex] | None = None
+        self, start: Any, end: Any, old_indices: Sequence[TIndex]
     ) -> Sequence[TIndex]:
-        if old_indices is None:
-            raise TypeError("old_indices must be Sequence")
         return self.ids.difference(Index(old_indices)).to_list()
 
     def to_update(self, end: TIndex, *args: Any, **kwargs: Any) -> bool:
