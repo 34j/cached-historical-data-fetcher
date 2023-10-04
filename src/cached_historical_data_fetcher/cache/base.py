@@ -236,14 +236,21 @@ class HistoricalDataCache(Generic[TIndex, TInterval, PGet], metaclass=ABCMeta):
                 compress=self.compress,
                 protocol=self.protocol,
             )
+            try:
+                min_, max_ = df.index.min(), df.index.max()
+            except TypeError:
+                min_, max_ = df.index[0], df.index[-1]
             LOG.debug(
-                f"Updated {name} from {path}, [{df.index.min()}~{df.index.max()}]"
+                f"Updated {name} from {path}, [{min_}~{max_}]"
                 f" ({old_len}->{len(df)} rows)"
             )
         else:
+            try:
+                min_, max_ = df.index.min(), df.index.max()
+            except TypeError:
+                min_, max_ = df.index[0], df.index[-1]
             LOG.debug(
-                f"Loaded {name} from {path}, [{df.index.min()}~{df.index.max()}]"
-                f" ({len(df)} rows)"
+                f"Loaded {name} from {path}, [{min_}~{max_}]" f" ({len(df)} rows)"
             )
         del self.df_old
         return df
