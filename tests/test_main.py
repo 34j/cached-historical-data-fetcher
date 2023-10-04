@@ -188,9 +188,11 @@ class TestDocs(IsolatedAsyncioTestCase):
             delay_seconds = 0.0
 
             async def get_one(self, start: str, *args: Any, **kwargs: Any) -> DataFrame:
-                return DataFrame({"id+hello": [start + "hello"]}, index=[start])
+                return DataFrame({"id+hello": [start + "+hello"]}, index=[start])
 
         cache = MyIdCache_()
-        cache.set_ids(["a", "b", "c"])
-        df = await cache.update(reload=True)
-        print(df)
+        cache.set_ids(["a", "b"])
+        df1 = await cache.update(reload=True)
+        cache.set_ids(["b", "c"])
+        df2 = await cache.update()
+        print(df1, df2)

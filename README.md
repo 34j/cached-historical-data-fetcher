@@ -49,6 +49,8 @@ pip install cached-historical-data-fetcher
 
 ## Usage
 
+### `HistoricalDataCache`, `HistoricalDataCacheWithChunk` and `HistoricalDataCacheWithFixedChunk`
+
 Override `get_one` method to fetch data for one chunk. `update` method will call `get_one` for each chunk and concatenate results.
 
 ```python
@@ -66,7 +68,7 @@ class MyCacheWithFixedChunk(HistoricalDataCacheWithFixedChunk[Timestamp, Timedel
         return DataFrame({"day": [start.day]}, index=[start])
 
 # get complete data
-df = await MyCacheWithFixedChunk().update()
+print(await MyCacheWithFixedChunk().update())
 ```
 
 ```shell
@@ -74,6 +76,34 @@ df = await MyCacheWithFixedChunk().update()
 2023-09-30 00:00:00+00:00   30
 2023-10-01 00:00:00+00:00    1
 2023-10-02 00:00:00+00:00    2
+```
+
+### `IdCacheWithFixedChunk`
+
+```python
+from cached_historical_data_fetcher import IdCacheWithFixedChunk
+
+class MyIdCache(IdCacheWithFixedChunk[str, Any]):
+    delay_seconds = 0.0
+
+    async def get_one(self, start: str, *args: Any, **kwargs: Any) -> DataFrame:
+        return DataFrame({"id+hello": [start + "+hello"]}, index=[start])
+
+cache = MyIdCache()
+cache.set_ids(["a", "b"])
+print(await cache.update(reload=True))
+cache.set_ids(["b", "c"])
+print(await cache.update())
+```
+
+```shell
+       id+hello
+    a   a+hello
+    b   b+hello
+       id+hello
+    a   a+hello
+    b   b+hello
+    c   c+hello
 ```
 
 See [example.ipynb](example.ipynb) for real-world example.
