@@ -182,3 +182,15 @@ class TestDocs(IsolatedAsyncioTestCase):
 
         df = await MyCacheWithFixedChunk_().update()
         print(df)
+
+    async def test_docs_code4(self) -> None:
+        class MyIdCache_(IdCacheWithFixedChunk[str, Any]):
+            delay_seconds = 0.0
+
+            async def get_one(self, start: str, *args: Any, **kwargs: Any) -> DataFrame:
+                return DataFrame({"id+hello": [start + "hello"]}, index=[start])
+
+        cache = MyIdCache_()
+        cache.set_ids(["a", "b", "c"])
+        df = await cache.update(reload=True)
+        print(df)
