@@ -164,9 +164,9 @@ class HistoricalDataCacheWithChunk(
             dfs.append(df)
             start_current = df.index.max()
             if isinstance(start_current, tuple):
-                start_current = start_current[0]  # type: ignore
+                start_current = start_current[0]
             if self.add_interval_to_start_index:
-                start_current += self.interval
+                start_current += self.interval  # type: ignore
             pbar.update()
             pbar.set_description(
                 f"{self.__class__.__name__} {start_current}"

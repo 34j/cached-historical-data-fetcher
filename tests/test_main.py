@@ -7,37 +7,49 @@ from unittest import IsolatedAsyncioTestCase
 import pandas as pd
 from pandas import DataFrame, Timedelta, Timestamp
 from pandas.testing import assert_frame_equal
+from parameterized import parameterized_class
 
 from cached_historical_data_fetcher import (
     HistoricalDataCache,
     HistoricalDataCacheWithChunk,
     HistoricalDataCacheWithFixedChunk,
+    IdCacheWithFixedChunk,
 )
 
-_INTERVAL = Timedelta(seconds=0.5)
+_INTERVAL = Timedelta(seconds=1)
 _WAIT_SECONDS_MULTIPLIER = 2
 _WAIT_SECONDS = _INTERVAL.total_seconds() * _WAIT_SECONDS_MULTIPLIER
-_START_INIT = Timestamp.utcnow() - _INTERVAL * 5
+_start_index = Timestamp.utcnow() - _INTERVAL * 5
 
 
-class MyCache(HistoricalDataCache):
+class MyCache(HistoricalDataCache[Timestamp, Timedelta, Any]):
     count = -1
     interval: Timedelta = _INTERVAL
-    add_interval: bool = False
+    add_interval_to_start_index: bool = False
 
     async def get(
         self, start: Timestamp | Any | None, *args: Any, **kwargs: Any
     ) -> DataFrame:
         if start is None:
-            start = _START_INIT
+            start = _start_index
         r = pd.date_range(start, Timestamp.utcnow(), freq=_INTERVAL)
         self.count += 1
         return DataFrame({"count": self.count}, index=r)
 
 
-class MyCacheWithChunk(HistoricalDataCacheWithChunk):
+class MyCacheInt(HistoricalDataCache[int, int, Any]):
+    interval = 1
+    end_index = 0
+
+    async def get(self, start: int | None, *args: Any, **kwargs: Any) -> DataFrame:
+        if start is None:
+            start = 0
+        return DataFrame({"count": [start]}, index=[start])
+
+
+class MyCacheWithChunk(HistoricalDataCacheWithChunk[Timestamp, Timedelta, Any]):
     count = -1
-    start_init: Timestamp = _START_INIT
+    start_index: Timestamp = _start_index
     interval: Timedelta = _INTERVAL
     delay_seconds: float = 0
 
@@ -46,9 +58,11 @@ class MyCacheWithChunk(HistoricalDataCacheWithChunk):
         return DataFrame({"count": [self.count]}, index=[start])
 
 
-class MyCacheWithFixedChunk(HistoricalDataCacheWithFixedChunk):
+class MyCacheWithFixedChunk(
+    HistoricalDataCacheWithFixedChunk[Timestamp, Timedelta, Any]
+):
     count = -1
-    start_init: Timestamp = _START_INIT
+    start_index: Timestamp = _start_index
     interval: Timedelta = _INTERVAL
     delay_seconds: float = 0
 
@@ -57,9 +71,29 @@ class MyCacheWithFixedChunk(HistoricalDataCacheWithFixedChunk):
         return DataFrame({"count": [self.count]}, index=[start])
 
 
+class MyIdCache(IdCacheWithFixedChunk[str, Any]):
+    count = -1
+    delay_seconds: float = 0
+
+    async def get_one(self, start: str, *args: Any, **kwargs: Any) -> DataFrame:
+        self.count += 1
+        return DataFrame({"count": [self.count]}, index=[start])
+
+
+@parameterized_class(
+    ("cache",),
+    [
+        (MyCache(),),
+        (MyCacheInt(),),
+        (MyCacheWithChunk(),),
+        (MyCacheWithFixedChunk(),),
+    ],
+)
 class TestCache(IsolatedAsyncioTestCase):
-    async def test_cache(self):
-        cache = MyCache()
+    cache: HistoricalDataCache[Any, Any, Any]
+
+    async def test_cache(self) -> None:
+        cache = self.cache
         df = await cache.update(reload=True)
 
         # update immediately
@@ -68,66 +102,47 @@ class TestCache(IsolatedAsyncioTestCase):
 
         # update after interval
         await asyncio.sleep(_WAIT_SECONDS)
-        with self.assertWarns(RuntimeWarning):
+        if isinstance(cache, MyCache):
+            with self.assertWarns(RuntimeWarning):
+                df_new = await cache.update()
+            self.assertEqual(
+                df_new["count"].sum(),
+                _WAIT_SECONDS_MULTIPLIER + (1 if cache.keep == "last" else 0),
+            )
+        else:
             df_new = await cache.update()
-        self.assertEqual(df_new["count"].sum(), _WAIT_SECONDS_MULTIPLIER + 1)
         print(df, df_new)
 
-    async def test_cache_keep_first(self):
-        cache = MyCache()
-        cache.keep = "first"
+
+class TestIdCache(IsolatedAsyncioTestCase):
+    async def test_id_cache(self) -> None:
+        cache = MyIdCache()
+        ids = ["apple", "banana", "cherry"]
+
+        cache.set_ids(ids[:2])
+        self.assertEqual(cache.ids.to_list(), ids[:2])
         df = await cache.update(reload=True)
+        print(df)
+        self.assertEqual(len(df), 2)
 
-        # update immediately
+        cache.set_ids(ids)
         df2 = await cache.update()
-        assert_frame_equal(df, df2)
+        self.assertEqual(df2["count"].sum(), 3)
+        self.assertEqual(len(df2), 3)
 
-        # update after interval
-        await asyncio.sleep(_WAIT_SECONDS)
-        with self.assertWarns(RuntimeWarning):
-            df_new = await cache.update()
-        self.assertEqual(df_new["count"].sum(), _WAIT_SECONDS_MULTIPLIER)
-        print(df, df_new)
+        print(df, df2)
 
-    async def test_cache_with_chunk(self):
-        cache = MyCacheWithChunk()
-        df = await cache.update(reload=True)
 
-        # update immediately
-        df2 = await cache.update()
-        assert_frame_equal(df, df2)
-
-        # update after interval
-        await asyncio.sleep(_WAIT_SECONDS)
-        df_new = await cache.update()
-        print(df, df_new)
-
-    async def test_cache_with_fixed_chunk(self):
-        cache = MyCacheWithFixedChunk()
-        df = await cache.update(reload=True)
-
-        # update immediately
-        df2 = await cache.update()
-        assert_frame_equal(df, df2)
-
-        # update after interval
-        await asyncio.sleep(_WAIT_SECONDS)
-        df_new = await cache.update()
-        print(df, df_new)
-
-    async def test_docs_code(self):
-        from pandas import DataFrame, Timedelta, Timestamp, date_range
-
-        from cached_historical_data_fetcher import HistoricalDataCacheWithFixedChunk
-
-        class MyCache_(HistoricalDataCache):
+class TestDocs(IsolatedAsyncioTestCase):
+    async def test_docs_code(self) -> None:
+        class MyCache_(HistoricalDataCache[Timestamp, Timedelta, Any]):
             interval: Timedelta = Timedelta(days=1)
 
             async def get(
                 self, start: Timestamp | None, *args: Any, **kwargs: Any
             ) -> DataFrame:
                 start = start or Timestamp.utcnow().floor("10D")
-                date_range_chunk = date_range(start, Timestamp.utcnow(), freq="D")
+                date_range_chunk = pd.date_range(start, Timestamp.utcnow(), freq="D")
                 return DataFrame(
                     {"day": [d.day for d in date_range_chunk]}, index=date_range_chunk
                 )
@@ -136,10 +151,13 @@ class TestCache(IsolatedAsyncioTestCase):
         print("\n")
         print(df)
 
-        class MyCacheWithChunk_(HistoricalDataCacheWithChunk):
+    async def test_docs_code2(self) -> None:
+        class MyCacheWithChunk_(
+            HistoricalDataCacheWithChunk[Timestamp, Timedelta, Any]
+        ):
             delay_seconds: float = 0
             interval: Timedelta = Timedelta(days=1)
-            start_init: Timestamp = Timestamp.utcnow().floor("10D")
+            start_index: Timestamp = Timestamp.utcnow().floor("10D")
 
             async def get_one(
                 self, start: Timestamp, *args: Any, **kwargs: Any
@@ -149,10 +167,13 @@ class TestCache(IsolatedAsyncioTestCase):
         df = await MyCacheWithChunk_().update()
         print(df)
 
-        class MyCacheWithFixedChunk_(HistoricalDataCacheWithFixedChunk):
+    async def test_docs_code3(self) -> None:
+        class MyCacheWithFixedChunk_(
+            HistoricalDataCacheWithFixedChunk[Timestamp, Timedelta, Any]
+        ):
             delay_seconds: float = 0
             interval: Timedelta = Timedelta(days=1)
-            start_init: Timestamp = Timestamp.utcnow().floor("10D")
+            start_index: Timestamp = Timestamp.utcnow().floor("10D")
 
             async def get_one(
                 self, start: Timestamp, *args: Any, **kwargs: Any

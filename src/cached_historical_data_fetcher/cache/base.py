@@ -12,31 +12,33 @@ from typing_extensions import Self
 
 from ..io import get_path, read, update
 
+T = TypeVar("T", contravariant=True)
 
-class AddableAndSubtractableAndComparable(Protocol):
+
+class AddableAndSubtractableAndComparable(Protocol[T]):
     """A protocol that requires __add__, __sub__, __lt__, __gt__
     (+, -, <, >) operators."""
 
-    def __add__(self, other: Any) -> Self:
+    def __add__(self, other: Self | T) -> Self:
         ...
 
-    def __sub__(self, other: Any) -> Self:
+    def __sub__(self, other: Self | T) -> Self:
         ...
 
-    def __lt__(self, other: Any) -> bool:
+    def __lt__(self, other: Self) -> bool:
         ...
 
-    def __gt__(self, other: Any) -> bool:
+    def __gt__(self, other: Self) -> bool:
         ...
 
 
 BASE_PATH = Path(f"~/.cache/{__name__.split('.')[0]}").expanduser()
 """The folder to store cache files."""
 LOG = getLogger(__name__)
-TIndex = TypeVar("TIndex", bound=AddableAndSubtractableAndComparable)
-"""The type of index in DataFrame."""
 TInterval = TypeVar("TInterval")
 """The type of interval which can be added to index."""
+TIndex = TypeVar("TIndex")
+"""The type of index in DataFrame."""
 PGet = ParamSpec("PGet")
 """The type of arguments for `self.get()`."""
 
@@ -103,7 +105,7 @@ class HistoricalDataCache(Generic[TIndex, TInterval, PGet], metaclass=ABCMeta):
         Consider overriding `end_index_base` instead of this property."""
         if not self.subtract_interval_from_end_index:
             return self.end_index_base
-        return self.end_index_base - self.interval
+        return self.end_index_base - self.interval  # type: ignore
 
     def __init__(self) -> None:
         """Initialize HistoricalDataCache."""
@@ -286,4 +288,4 @@ class HistoricalDataCache(Generic[TIndex, TInterval, PGet], metaclass=ABCMeta):
         bool
             Whether to update cache file.
         """
-        return end is None or end < self.end_index
+        return end is None or end < self.end_index  # type: ignore
