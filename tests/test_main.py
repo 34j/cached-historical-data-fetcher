@@ -120,6 +120,7 @@ class TestIdCache(IsolatedAsyncioTestCase):
         ids = ["apple", "banana", "cherry"]
 
         cache.set_ids(ids[:2])
+        assert cache.ids is not None
         self.assertEqual(cache.ids.to_list(), ids[:2])
         df = await cache.update(reload=True)
         print(df)
