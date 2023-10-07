@@ -51,11 +51,12 @@ pip install cached-historical-data-fetcher
 
 ### `HistoricalDataCache`, `HistoricalDataCacheWithChunk` and `HistoricalDataCacheWithFixedChunk`
 
-Override `get_one` method to fetch data for one chunk. `update` method will call `get_one` for each chunk and concatenate results.
+Override `get_one()` method to fetch data for one chunk. `update()` method will call `get_one()` for each unfetched chunk and concatenate results, then save to cache.
 
 ```python
 from cached_historical_data_fetcher import HistoricalDataCacheWithFixedChunk
 from pandas import DataFrame, Timedelta, Timestamp
+from typing import Any
 
 # define cache class
 class MyCacheWithFixedChunk(HistoricalDataCacheWithFixedChunk[Timestamp, Timedelta, Any]):
@@ -82,20 +83,27 @@ print(await MyCacheWithFixedChunk().update())
 
 ### `IdCacheWithFixedChunk`
 
+Override `get_one` method to fetch data for one chunk in the same way as in `HistoricalDataCacheWithFixedChunk`.
+After updating `ids` by calling `set_ids()`, `update()` method will call `get_one()` for every unfetched id and concatenate results, then save to cache.
+
 ```python
 from cached_historical_data_fetcher import IdCacheWithFixedChunk
+from pandas import DataFrame
+from typing import Any
 
 class MyIdCache(IdCacheWithFixedChunk[str, Any]):
-    delay_seconds = 0.0
+    delay_seconds = 0.0 # delay between chunks (requests) in seconds
 
     async def get_one(self, start: str, *args: Any, **kwargs: Any) -> DataFrame:
+        """Fetch data for one chunk."""
         return DataFrame({"id+hello": [start + "+hello"]}, index=[start])
 
-cache = MyIdCache()
-cache.set_ids(["a", "b"])
-print(await cache.update(reload=True))
-cache.set_ids(["b", "c"])
-print(await cache.update())
+cache = MyIdCache() # create cache
+cache.set_ids(["a"]) # set ids
+cache.set_ids(["b"]) # set ids again, now `cache.ids` is ["a", "b"]
+print(await cache.update(reload=True)) # discard previous cache and fetch again
+cache.set_ids(["b", "c"]) # set ids again, now `cache.ids` is ["a", "b", "c"]
+print(await cache.update()) # fetch only new data
 ```
 
 ```shell
