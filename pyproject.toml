@@ -31,6 +31,7 @@ aiofiles = "^23.2.1"
 tqdm = "^4.66.1"
 python-slugify = "^8.0.1"
 lz4 = "^4.3.2"
+typing-extensions = "^4.8.0"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = ">=3"

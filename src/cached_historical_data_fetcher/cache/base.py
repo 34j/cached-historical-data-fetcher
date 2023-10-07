@@ -4,11 +4,11 @@ import warnings
 from abc import ABCMeta, abstractmethod
 from logging import getLogger
 from pathlib import Path
-from typing import Any, Generic, Literal, ParamSpec, Protocol, TypeVar
+from typing import Any, Generic, Literal, Protocol, TypeVar
 
 from pandas import DataFrame, Timedelta, Timestamp
 from slugify import slugify
-from typing_extensions import Self
+from typing_extensions import ParamSpec, Self
 
 from ..io import get_path, read, update
 
