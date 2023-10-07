@@ -49,21 +49,27 @@ pip install cached-historical-data-fetcher
 
 ## Usage
 
-Override `get_one` method to fetch data for one chunk. `update` method will call `get_one` for each chunk and concatenate results.
+### `HistoricalDataCache`, `HistoricalDataCacheWithChunk` and `HistoricalDataCacheWithFixedChunk`
+
+Override `get_one()` method to fetch data for one chunk. `update()` method will call `get_one()` for each unfetched chunk and concatenate results, then save to cache.
 
 ```python
 from cached_historical_data_fetcher import HistoricalDataCacheWithFixedChunk
 from pandas import DataFrame, Timedelta, Timestamp
+from typing import Any
 
-class MyCacheWithFixedChunk(HistoricalDataCacheWithFixedChunk):
-    delay_seconds: float = 0 # delay between chunks
-    interval: Timedelta = Timedelta(days=1) # chunk interval
-    start_init: Timestamp = Timestamp.utcnow().floor("10D") # start date
+# define cache class
+class MyCacheWithFixedChunk(HistoricalDataCacheWithFixedChunk[Timestamp, Timedelta, Any]):
+    delay_seconds = 0.0 # delay between chunks (requests) in seconds
+    interval = Timedelta(days=1) # interval between chunks, can be any type
+    start_index = Timestamp.utcnow().floor("10D") # start index, can be any type
 
     async def get_one(self, start: Timestamp, *args: Any, **kwargs: Any) -> DataFrame:
+        """Fetch data for one chunk."""
         return DataFrame({"day": [start.day]}, index=[start])
 
-df = await MyCacheWithFixedChunk().update()
+# get complete data
+print(await MyCacheWithFixedChunk().update())
 ```
 
 ```shell
@@ -73,7 +79,42 @@ df = await MyCacheWithFixedChunk().update()
 2023-10-02 00:00:00+00:00    2
 ```
 
-See [example.ipynb](example.ipynb) for real-world example.
+**See [example.ipynb](example.ipynb) for real-world example.**
+
+### `IdCacheWithFixedChunk`
+
+Override `get_one` method to fetch data for one chunk in the same way as in `HistoricalDataCacheWithFixedChunk`.
+After updating `ids` by calling `set_ids()`, `update()` method will call `get_one()` for every unfetched id and concatenate results, then save to cache.
+
+```python
+from cached_historical_data_fetcher import IdCacheWithFixedChunk
+from pandas import DataFrame
+from typing import Any
+
+class MyIdCache(IdCacheWithFixedChunk[str, Any]):
+    delay_seconds = 0.0 # delay between chunks (requests) in seconds
+
+    async def get_one(self, start: str, *args: Any, **kwargs: Any) -> DataFrame:
+        """Fetch data for one chunk."""
+        return DataFrame({"id+hello": [start + "+hello"]}, index=[start])
+
+cache = MyIdCache() # create cache
+cache.set_ids(["a"]) # set ids
+cache.set_ids(["b"]) # set ids again, now `cache.ids` is ["a", "b"]
+print(await cache.update(reload=True)) # discard previous cache and fetch again
+cache.set_ids(["b", "c"]) # set ids again, now `cache.ids` is ["a", "b", "c"]
+print(await cache.update()) # fetch only new data
+```
+
+```shell
+       id+hello
+    a   a+hello
+    b   b+hello
+       id+hello
+    a   a+hello
+    b   b+hello
+    c   c+hello
+```
 
 ## Contributors ✨
 
