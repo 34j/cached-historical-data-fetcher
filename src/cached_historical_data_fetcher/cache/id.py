@@ -42,7 +42,7 @@ class IdCacheWithFixedChunk(
 
     add_interval_to_start_index: bool = False
     subtract_interval_from_end_index: bool = False
-    ids: Index[TIndex] | None
+    ids: Index[TIndex] | None = None
 
     @property
     def start_index(self) -> TIndex | None:  # type: ignore
