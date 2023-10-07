@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.2.0 (2023-10-07)
+
+### Feature
+
+- Add `idcache` (#2) ([`d4d8820`](https://github.com/34j/cached-historical-data-fetcher/commit/d4d88201b80616ef1be6ec2e05503282e3de5e53))
+
 ## v0.1.0 (2023-10-02)
 
 ### Feature
