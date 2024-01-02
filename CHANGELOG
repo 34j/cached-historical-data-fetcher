@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.2.8 (2024-01-02)
+
+### Fix
+
+- Update dependency lz4 to v4.3.3 (#67) ([`287ee35`](https://github.com/34j/cached-historical-data-fetcher/commit/287ee35033abbf8a2829fcf554db6d6a26db3cae))
+
 ## v0.2.7 (2023-12-10)
 
 ### Fix
