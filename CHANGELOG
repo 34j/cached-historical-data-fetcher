@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.2.9 (2024-01-03)
+
+### Fix
+
+- Update dependency numpy to v1.26.3 (#68) ([`e7acd9f`](https://github.com/34j/cached-historical-data-fetcher/commit/e7acd9f747d091674bf105fd440bef574881fef7))
+
 ## v0.2.8 (2024-01-02)
 
 ### Fix
