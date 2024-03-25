@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.2.15 (2024-03-25)
+
+### Fix
+
+- Update dependency python-slugify to v8.0.4 (#96) ([`a8600e2`](https://github.com/34j/cached-historical-data-fetcher/commit/a8600e2700f6f3841143e1cb3eb654a7cf38c7dd))
+
 ## v0.2.14 (2024-03-25)
 
 ### Fix
