@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.2.14 (2024-03-25)
+
+### Fix
+
+- Update dependency pandas to v2.2.1 (#95) ([`72ccd0f`](https://github.com/34j/cached-historical-data-fetcher/commit/72ccd0f6dcd3120bf6681fb5d9ad7908bdb8df21))
+
 ## v0.2.13 (2024-02-06)
 
 ### Fix
