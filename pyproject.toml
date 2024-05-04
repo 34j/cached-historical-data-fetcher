@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cached-historical-data-fetcher"
-version = "0.2.17"
+version = "0.2.18"
 description = "Python utility for fetching any historical data using caching."
 authors = ["34j <34j.95a2p@simplelogin.com>"]
 license = "MIT"
