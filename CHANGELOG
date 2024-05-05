@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.2.19 (2024-05-05)
+
+### Fix
+
+- Update dependency joblib to v1.4.2 (#113) ([`02ed09d`](https://github.com/34j/cached-historical-data-fetcher/commit/02ed09d1776a3009e07ee72077ff799444a0b228))
+
 ## v0.2.18 (2024-05-04)
 
 ### Fix
