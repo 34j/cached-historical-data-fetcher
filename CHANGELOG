@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.2.20 (2024-05-05)
+
+### Fix
+
+- Update dependency typing-extensions to v4.11.0 (#114) ([`cbb1cc8`](https://github.com/34j/cached-historical-data-fetcher/commit/cbb1cc89418a2fde4f324adf8c6e0f28da839145))
+
 ## v0.2.19 (2024-05-05)
 
 ### Fix
