@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.2.25 (2025-01-29)
+
+### Fix
+
+- Update dependency tqdm to v4.67.1 (#143) ([`c43c9fb`](https://github.com/34j/cached-historical-data-fetcher/commit/c43c9fbe891bc77c303b2e097915182406dffa5a))
+
 ## v0.2.24 (2024-11-15)
 
 ### Fix
