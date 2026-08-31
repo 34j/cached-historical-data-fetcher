@@ -19,17 +19,13 @@ class AddableAndSubtractableAndComparable(Protocol[T]):
     """A protocol that requires __add__, __sub__, __lt__, __gt__
     (+, -, <, >) operators."""
 
-    def __add__(self, other: Self | T) -> Self:
-        ...
+    def __add__(self, other: Self | T) -> Self: ...
 
-    def __sub__(self, other: Self | T) -> Self:
-        ...
+    def __sub__(self, other: Self | T) -> Self: ...
 
-    def __lt__(self, other: Self) -> bool:
-        ...
+    def __lt__(self, other: Self) -> bool: ...
 
-    def __gt__(self, other: Self) -> bool:
-        ...
+    def __gt__(self, other: Self) -> bool: ...
 
 
 BASE_PATH = Path(f"~/.cache/{__name__.split('.')[0]}").expanduser()
@@ -214,9 +210,15 @@ class HistoricalDataCache(Generic[TIndex, TInterval, PGet], metaclass=ABCMeta):
         # update
         if to_update:
             df = await self.get(
-                ((start + self.interval) if self.add_interval_to_start_index else start)
-                if not df.empty
-                else None,
+                (
+                    (
+                        (start + self.interval)
+                        if self.add_interval_to_start_index
+                        else start
+                    )
+                    if not df.empty
+                    else None
+                ),
                 *args,
                 **kwargs,
             )
