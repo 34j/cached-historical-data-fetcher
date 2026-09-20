@@ -172,26 +172,27 @@ speedups = ["Brotli", "aiodns (>=3.3.0)", "brotlicffi"]
 
 [[package]]
 name = "aiohttp-client-cache"
-version = "0.13.0"
+version = "0.14.3"
 description = "Persistent cache for aiohttp requests"
 optional = false
-python-versions = "<4.0,>=3.9"
+python-versions = ">=3.9"
 files = [
-    {file = "aiohttp_client_cache-0.13.0-py3-none-any.whl", hash = "sha256:89211544e9f290de42ef85f545cdae8eb34d1af6e51dcc8b2cf956dd539d2f39"},
-    {file = "aiohttp_client_cache-0.13.0.tar.gz", hash = "sha256:dc5cd62340adbee18e0fedc7b0c37542692df08f8ed9945d751b7292a0433853"},
+    {file = "aiohttp_client_cache-0.14.3-py3-none-any.whl", hash = "sha256:1154497739dcf9c7f6f6f1f27dc3985d8a7f5f8f31fb76710c06044ffac6f983"},
+    {file = "aiohttp_client_cache-0.14.3.tar.gz", hash = "sha256:329f4038c6a8ed0b410023980b6d1a2c484af33e667a89ce245c899d62c1fba1"},
 ]
 
 [package.dependencies]
-aioboto3 = {version = ">=9.0", optional = true, markers = "extra == \"all\" or extra == \"dynamodb\""}
-aiobotocore = {version = ">=2.0", optional = true, markers = "extra == \"all\" or extra == \"dynamodb\""}
-aiofiles = {version = ">=0.6.0", optional = true, markers = "extra == \"all\" or extra == \"filesystem\""}
-aiohttp = ">=3.8,<4.0"
-aiosqlite = {version = ">=0.20", optional = true, markers = "extra == \"all\" or extra == \"filesystem\" or extra == \"sqlite\""}
+aioboto3 = {version = ">=9.0", optional = true, markers = "extra == \"all\""}
+aiobotocore = {version = ">=2.0", optional = true, markers = "extra == \"all\""}
+aiofiles = {version = ">=0.6.0", optional = true, markers = "extra == \"all\""}
+aiohttp = ">=3.8"
+aiosqlite = {version = ">=0.20", optional = true, markers = "extra == \"all\""}
 attrs = ">=21.2"
 itsdangerous = ">=2.0"
-motor = {version = ">=3.1", optional = true, markers = "extra == \"all\" or extra == \"mongodb\""}
-redis = {version = ">=4.2", optional = true, markers = "extra == \"all\" or extra == \"redis\""}
-url-normalize = ">=2.2,<3.0"
+motor = {version = ">=3.1", optional = true, markers = "extra == \"all\""}
+redis = {version = ">=4.2", optional = true, markers = "extra == \"all\""}
+typing-extensions = {version = ">=4", markers = "python_version <= \"3.10\""}
+url-normalize = ">=2.2"
 
 [package.extras]
 all = ["aioboto3 (>=9.0)", "aiobotocore (>=2.0)", "aiofiles (>=0.6.0)", "aiosqlite (>=0.20)", "motor (>=3.1)", "redis (>=4.2)"]
@@ -4012,4 +4013,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.13"
-content-hash = "c10fca6400fde3ef20ffdb1e70d53eacc3391fa45db8742e261572b7e7504c31"
+content-hash = "1b395cc3f09b159402dd963dde644bbbba892bfe192c2cdcd41bbffdff65aa16"
