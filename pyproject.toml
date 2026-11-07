@@ -60,6 +60,7 @@ notebook = [
 
 [tool.ruff]
 extend = ".venv/ruff.toml"
+extend-exclude = [ "example.ipynb" ]
 lint.extend-ignore = [
   "ANN002",
   "ANN204",
