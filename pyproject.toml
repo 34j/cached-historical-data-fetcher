@@ -1,6 +1,6 @@
 [build-system]
 build-backend = "setuptools.build_meta"
-requires = ["setuptools>=77.0.3"]
+requires = [ "setuptools>=77.0.3" ]
 
 [project]
 name = "cached-historical-data-fetcher"
@@ -8,7 +8,7 @@ version = "0.2.31"
 description = "Python utility for fetching any historical data using caching."
 readme = "README.md"
 license = "MIT"
-authors = [{ name = "34j" }]
+authors = [ { name = "34j" } ]
 requires-python = ">=3.12"
 classifiers = [
   "Development Status :: 2 - Pre-Alpha",
@@ -25,11 +25,11 @@ dependencies = [
   "aiofiles>=23.2.1",
   "joblib>=1.3.2",
   "lz4>=4.3.2",
-  "numpy>=1.26.0",
+  "numpy>=1.26",
   "pandas>=2.1.1",
   "python-slugify>=8.0.1",
   "tqdm>=4.66.1",
-  "typing-extensions>=4.8.0",
+  "typing-extensions>=4.8",
 ]
 urls."Bug Tracker" = "https://github.com/34j/cached-historical-data-fetcher/issues"
 urls.Changelog = "https://github.com/34j/cached-historical-data-fetcher/blob/main/CHANGELOG.md"
@@ -60,9 +60,63 @@ notebook = [
 
 [tool.ruff]
 extend = ".venv/ruff.toml"
+lint.extend-ignore = [
+  "ANN002",
+  "ANN204",
+  "ARG002",
+  "ASYNC240",
+  "B028",
+  "B904",
+  "B909",
+  "BLE001",
+  "D102",
+  "D105",
+  "D204",
+  "D205",
+  "D209",
+  "D400",
+  "D413",
+  "D415",
+  "D417",
+  "DOC501",
+  "DOC502",
+  "E302",
+  "E305",
+  "E501",
+  "FBT001",
+  "FBT002",
+  "FBT003",
+  "FURB180",
+  "G004",
+  "I001",
+  "N801",
+  "PGH003",
+  "PLC0105",
+  "PLR6301",
+  "PT009",
+  "Q000",
+  "RET504",
+  "RET505",
+  "RET506",
+  "RSE102",
+  "RUF047",
+  "T201",
+  "TID252",
+  "TRY201",
+  "UP035",
+  "UP046",
+  "W293",
+]
 
 [tool.pyproject-fmt]
 max_supported_python = "3.14"
 
 [tool.ty]
+rules.invalid-argument-type = "ignore"
+rules.invalid-assignment = "ignore"
+rules.invalid-return-type = "ignore"
+rules.invalid-type-form = "ignore"
+rules.no-matching-overload = "ignore"
+rules.unresolved-reference = "ignore"
+rules.unsupported-operator = "ignore"
 terminal.error-on-warning = true

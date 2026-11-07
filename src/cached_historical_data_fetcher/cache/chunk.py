@@ -32,8 +32,10 @@ class HistoricalDataCacheWithChunk(
     Examples
     --------
     .. code-block:: python
+
         from cached_historical_data_fetcher import HistoricalDataCacheWithChunk
         from pandas import DataFrame, Timedelta, Timestamp
+
 
         class MyCacheWithChunk(HistoricalDataCacheWithChunk[Timestamp, Timedelta, Any]):
             delay_seconds = 0.0
@@ -42,6 +44,7 @@ class HistoricalDataCacheWithChunk(
 
             async def get_one(self, start: Timestamp, *args: Any, **kwargs: Any) -> DataFrame:
                 return DataFrame({"day": [start.day]}, index=[start])
+
 
         df = await MyCacheWithChunk().update()
     """
@@ -101,9 +104,7 @@ class HistoricalDataCacheWithChunk(
         self.delay_seconds = value
 
     @abstractmethod
-    async def get_one(
-        self, start: TIndex, *args: PGet.args, **kwargs: PGet.kwargs
-    ) -> DataFrame:
+    async def get_one(self, start: TIndex, *args: PGet.args, **kwargs: PGet.kwargs) -> DataFrame:
         """Get one chunk of historical data. Override this method to implement the logic.
 
         Parameters
@@ -122,9 +123,7 @@ class HistoricalDataCacheWithChunk(
             or `self.to_update()`.
         """
 
-    async def get(
-        self, start: TIndex | None, *args: PGet.args, **kwargs: PGet.kwargs
-    ) -> DataFrame:
+    async def get(self, start: TIndex | None, *args: PGet.args, **kwargs: PGet.kwargs) -> DataFrame:
         """Get historical data. This method does not need to be overridden.
 
         Parameters
@@ -145,13 +144,9 @@ class HistoricalDataCacheWithChunk(
 
         # The progress bar is not accurate because chunk size may not be fixed.
         try:
-            new_indices = self.new_indices(
-                start_index, self.end_index, self.df_old.index
-            )
+            new_indices = self.new_indices(start_index, self.end_index, self.df_old.index)
         except Exception as e:
-            warnings.warn(
-                f"self.new_indices() failed. Progress bar may be inaccurate: {e}"
-            )
+            warnings.warn(f"self.new_indices() failed. Progress bar may be inaccurate: {e}")
             new_indices = []
 
         pbar = tqdm(new_indices)
@@ -166,7 +161,7 @@ class HistoricalDataCacheWithChunk(
             if isinstance(start_current, tuple):
                 start_current = start_current[0]
             if self.add_interval_to_start_index:
-                start_current += self.interval  # type: ignore
+                start_current += self.interval
             pbar.update()
             pbar.set_description(
                 f"{self.__class__.__name__} {start_current}"
@@ -201,8 +196,10 @@ class HistoricalDataCacheWithFixedChunk(
     Examples
     --------
     .. code-block:: python
+
         from cached_historical_data_fetcher import HistoricalDataCacheWithFixedChunk
         from pandas import DataFrame, Timedelta, Timestamp
+
 
         class MyCacheWithFixedChunk(HistoricalDataCacheWithFixedChunk[Timestamp, Timedelta, Any]):
             delay_seconds = 0.0
@@ -212,20 +209,17 @@ class HistoricalDataCacheWithFixedChunk(
             async def get_one(self, start: Timestamp, *args: Any, **kwargs: Any) -> DataFrame:
                 return DataFrame({"day": [start.day]}, index=[start])
 
+
         df = await MyCacheWithFixedChunk().update()
     """
 
-    async def get(
-        self, start: TIndex | None, *args: PGet.args, **kwargs: PGet.kwargs
-    ) -> DataFrame:
+    async def get(self, start: TIndex | None, *args: PGet.args, **kwargs: PGet.kwargs) -> DataFrame:
         start_index: TIndex = start or self.start_index
         tasks = []
 
         pbar = tqdm(self.new_indices(start_index, self.end_index, self.df_old.index))
         for start_current in pbar:
-            tasks.append(
-                asyncio.create_task(self.get_one(start_current, *args, **kwargs))
-            )
+            tasks.append(asyncio.create_task(self.get_one(start_current, *args, **kwargs)))
             pbar.update()
             pbar.set_description(
                 f"{self.__class__.__name__} {start_current}"

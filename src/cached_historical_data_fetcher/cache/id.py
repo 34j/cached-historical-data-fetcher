@@ -22,11 +22,13 @@ class IdCacheWithFixedChunk(
 
        from cached_historical_data_fetcher import IdCacheWithFixedChunk
 
+
        class MyIdCache(IdCacheWithFixedChunk[str, Any]):
            delay_seconds = 0.0
 
            async def get_one(self, start: str, *args: Any, **kwargs: Any) -> DataFrame:
                return DataFrame({"id+hello": [start + "+hello"]}, index=[start])
+
 
        cache = MyIdCache()
        cache.set_ids(["a", "b", "c"])
@@ -67,9 +69,7 @@ class IdCacheWithFixedChunk(
             self.ids = Index(ids)
         self.ids = self.ids.union(Index(ids))
 
-    def new_indices(
-        self, start: Any, end: Any, old_indices: Sequence[TIndex]
-    ) -> Sequence[TIndex]:
+    def new_indices(self, start: Any, end: Any, old_indices: Sequence[TIndex]) -> Sequence[TIndex]:
         if self.ids is None:
             raise RuntimeError("ids is not set, call `set_ids()` first")
         return self.ids.difference(Index(old_indices)).to_list()
