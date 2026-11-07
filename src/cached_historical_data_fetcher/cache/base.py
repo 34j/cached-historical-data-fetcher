@@ -1,3 +1,5 @@
+"""Cache base classes and protocols."""
+
 from __future__ import annotations
 
 import warnings
@@ -19,28 +21,24 @@ class AddableAndSubtractableAndComparable(Protocol[T]):
     """A protocol that requires __add__, __sub__, __lt__, __gt__
     (+, -, <, >) operators."""
 
-    def __add__(self, other: Self | T) -> Self:
-        ...
+    def __add__(self, other: Self | T) -> Self: ...
 
-    def __sub__(self, other: Self | T) -> Self:
-        ...
+    def __sub__(self, other: Self | T) -> Self: ...
 
-    def __lt__(self, other: Self) -> bool:
-        ...
+    def __lt__(self, other: Self) -> bool: ...
 
-    def __gt__(self, other: Self) -> bool:
-        ...
+    def __gt__(self, other: Self) -> bool: ...
 
 
 BASE_PATH = Path(f"~/.cache/{__name__.split('.')[0]}").expanduser()
-"""The folder to store cache files."""
+# The folder to store cache files.
 LOG = getLogger(__name__)
 TInterval = TypeVar("TInterval")
-"""The type of interval which can be added to index."""
+# The type of interval which can be added to index.
 TIndex = TypeVar("TIndex")
-"""The type of index in DataFrame."""
+# The type of index in DataFrame.
 PGet = ParamSpec("PGet")
-"""The type of arguments for `self.get()`."""
+# The type of arguments for `self.get()`.
 
 
 class HistoricalDataCache(Generic[TIndex, TInterval, PGet], metaclass=ABCMeta):
@@ -55,8 +53,10 @@ class HistoricalDataCache(Generic[TIndex, TInterval, PGet], metaclass=ABCMeta):
     Examples
     --------
     .. code-block:: python
+
         from cached_historical_data_fetcher import HistoricalDataCache
         from pandas import DataFrame, Timedelta, Timestamp, date_range
+
 
         class MyCache(HistoricalDataCache[Timestamp, Timedelta, Any]):
             interval = Timedelta(days=1)
@@ -65,6 +65,7 @@ class HistoricalDataCache(Generic[TIndex, TInterval, PGet], metaclass=ABCMeta):
                 start = start or Timestamp.utcnow().floor("10D")
                 date_range_chunk = date_range(start, Timestamp.utcnow(), freq="D")
                 return DataFrame({"day": [d.day for d in date_range_chunk]}, index=date_range_chunk)
+
 
         df = await MyCache().update()
     """
@@ -105,16 +106,13 @@ class HistoricalDataCache(Generic[TIndex, TInterval, PGet], metaclass=ABCMeta):
         Consider overriding `end_index_base` instead of this property."""
         if not self.subtract_interval_from_end_index:
             return self.end_index_base
-        return self.end_index_base - self.interval  # type: ignore
+        return self.end_index_base - self.interval
 
     def __init__(self) -> None:
         """Initialize HistoricalDataCache."""
         self.folder = self.__class__.__name__
 
-        if (
-            not self.subtract_interval_from_end_index
-            and self.add_interval_to_start_index
-        ):
+        if not self.subtract_interval_from_end_index and self.add_interval_to_start_index:
             warnings.warn(
                 "If `self.subtract_interval_from_end_index` is False, "
                 "make sure to set `self.add_interval_to_start_index` to False "
@@ -145,9 +143,9 @@ class HistoricalDataCache(Generic[TIndex, TInterval, PGet], metaclass=ABCMeta):
         str
             The name of cache file.
         """
-        name = "_".join([str(arg) for arg in args]) + "_".join(
-            [f"{key}-{value}" for key, value in kwargs.items()]
-        )
+        name = "_".join([str(arg) for arg in args]) + "_".join([
+            f"{key}-{value}" for key, value in kwargs.items()
+        ])
         name = slugify(name)
         return name
 
@@ -222,8 +220,7 @@ class HistoricalDataCache(Generic[TIndex, TInterval, PGet], metaclass=ABCMeta):
             )
             if not isinstance(df, DataFrame):
                 warnings.warn(
-                    f"Unexpected type returned from `self.get()`: {type(df)}\n"
-                    "Expected: DataFrame",
+                    f"Unexpected type returned from `self.get()`: {type(df)}\nExpected: DataFrame",
                 )
             old_len = len(df)
 
@@ -240,25 +237,18 @@ class HistoricalDataCache(Generic[TIndex, TInterval, PGet], metaclass=ABCMeta):
                 min_, max_ = df.index.min(), df.index.max()
             except TypeError:
                 min_, max_ = df.index[0], df.index[-1]
-            LOG.debug(
-                f"Updated {name} from {path}, [{min_}~{max_}]"
-                f" ({old_len}->{len(df)} rows)"
-            )
+            LOG.debug(f"Updated {name} from {path}, [{min_}~{max_}] ({old_len}->{len(df)} rows)")
         else:
             try:
                 min_, max_ = df.index.min(), df.index.max()
             except TypeError:
                 min_, max_ = df.index[0], df.index[-1]
-            LOG.debug(
-                f"Loaded {name} from {path}, [{min_}~{max_}]" f" ({len(df)} rows)"
-            )
+            LOG.debug(f"Loaded {name} from {path}, [{min_}~{max_}] ({len(df)} rows)")
         del self.df_old
         return df
 
     @abstractmethod
-    async def get(
-        self, start: TIndex, *args: PGet.args, **kwargs: PGet.kwargs
-    ) -> DataFrame:
+    async def get(self, start: TIndex, *args: PGet.args, **kwargs: PGet.kwargs) -> DataFrame:
         """Get historical data. Override this method to implement the logic.
 
         Parameters
@@ -295,4 +285,4 @@ class HistoricalDataCache(Generic[TIndex, TInterval, PGet], metaclass=ABCMeta):
         bool
             Whether to update cache file.
         """
-        return end is None or end < self.end_index  # type: ignore
+        return end is None or end < self.end_index

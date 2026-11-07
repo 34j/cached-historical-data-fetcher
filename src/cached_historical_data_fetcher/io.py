@@ -134,9 +134,7 @@ async def update(
             if mismatch == "raise":
                 raise e
             elif mismatch == "warn":
-                warnings.warn(
-                    f"Data mismatch. Left: cache, Right: new\n{e}", RuntimeWarning
-                )
+                warnings.warn(f"Data mismatch. Left: cache, Right: new\n{e}", RuntimeWarning)
             elif isinstance(mismatch, int):
                 LOG.log(mismatch, f"Data mismatch. Left: cache, Right: new\n{e}")
             else:
