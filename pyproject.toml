@@ -23,7 +23,7 @@ classifiers = [
 ]
 dependencies = [
   "aiofiles>=23.2.1",
-  "joblib>=1.3.2",
+  "joblib>=1.6.0",
   "lz4>=4.3.2",
   "numpy>=1.26",
   "pandas>=2.1.1",
