@@ -28,7 +28,7 @@ dependencies = [
   "numpy>=1.26",
   "pandas>=2.1.1",
   "python-slugify>=8.0.1",
-  "tqdm>=4.66.1",
+  "tqdm>=4.70.1",
   "typing-extensions>=4.8",
 ]
 urls."Bug Tracker" = "https://github.com/34j/cached-historical-data-fetcher/issues"
